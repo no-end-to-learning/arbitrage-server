@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="me.qiujun.arbitrage.mapper.AssetSnapshotMapper">
+    <resultMap id="BaseResultMap" type="me.qiujun.arbitrage.bean.base.AssetSnapshot">
+        <!--@Table arbitrage_asset_snapshot-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="batch_id" jdbcType="BIGINT" property="batchId"/>
+        <result column="exchange" jdbcType="VARCHAR" property="exchange"
+                typeHandler="me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler"/>
+        <result column="exchange_market" jdbcType="VARCHAR" property="exchangeMarket"/>
+        <result column="exchange_account" jdbcType="VARCHAR" property="exchangeAccount"/>
+        <result column="currency" jdbcType="VARCHAR" property="currency"/>
+        <result column="available" jdbcType="DECIMAL" property="available"/>
+        <result column="freeze" jdbcType="DECIMAL" property="freeze"/>
+        <result column="total" jdbcType="DECIMAL" property="total"/>
+        <result column="stat_total" jdbcType="DECIMAL" property="statTotal"/>
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, batch_id, exchange, exchange_market, exchange_account,
+        currency, available, `freeze`, total, stat_total,
+        created_at, updated_at
+    </sql>
+
+    <insert id="batchInsert">
+        insert into arbitrage_asset_snapshot(
+            id, batch_id, exchange, exchange_market, exchange_account,
+            currency, available, freeze, total, stat_total
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id,jdbcType=BIGINT},
+            #{item.batchId,jdbcType=BIGINT},
+            #{item.exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler},
+            #{item.exchangeMarket,jdbcType=VARCHAR},
+            #{item.exchangeAccount,jdbcType=VARCHAR},
+            #{item.currency,jdbcType=VARCHAR},
+            #{item.available,jdbcType=DECIMAL},
+            #{item.freeze,jdbcType=DECIMAL},
+            #{item.total,jdbcType=DECIMAL},
+            #{item.statTotal,jdbcType=DECIMAL}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateByPrimaryKey">
+        update arbitrage_asset_snapshot set
+        batch_id = #{batchId,jdbcType=BIGINT},
+        exchange = #{exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler},
+        exchange_market = #{exchangeMarket,jdbcType=VARCHAR},
+        exchange_account = #{exchangeAccount,jdbcType=VARCHAR},
+        currency = #{currency,jdbcType=VARCHAR},
+        available = #{available,jdbcType=DECIMAL},
+        freeze = #{freeze,jdbcType=DECIMAL},
+        total = #{total,jdbcType=DECIMAL},
+        stat_total = #{statTotal,jdbcType=DECIMAL}
+        where id=#{id,jdbcType=BIGINT}
+    </update>
+
+    <select id="selectLast24HByExchangeAndMarket" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from arbitrage_asset_snapshot
+        where created_at > date_sub(now(), interval 24 hour)
+        and exchange = #{exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler}
+        and exchange_market = #{exchangeMarket,jdbcType=VARCHAR}
+    </select>
+
+</mapper>

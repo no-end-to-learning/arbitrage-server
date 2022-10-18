@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <springProperty scope="context" name="serverId" source="app.system.server-id"/>
+    <springProperty scope="context" name="consoleLevel" source="app.logger.console.level"/>
+    <springProperty scope="context" name="logstashEnable" source="app.logger.logstash.enable"/>
+    <springProperty scope="context" name="logstashLevel" source="app.logger.logstash.level"/>
+    <springProperty scope="context" name="logstashEndpoint" source="app.logger.logstash.endpoint"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${consoleLevel}</level>
+        </filter>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <if condition='isDefined("logstashEnable") &amp;&amp; property("logstashEnable").equals("true")'>
+        <then>
+            <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+                <destination>${logstashEndpoint}</destination>
+                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                    <level>${logstashLevel}</level>
+                </filter>
+                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                    <includeContext>false</includeContext>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <customFields>{"server_id":"${serverId}"}</customFields>
+                </encoder>
+            </appender>
+        </then>
+    </if>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <if condition='isDefined("logstashEnable") &amp;&amp; property("logstashEnable").equals("true")'>
+            <then>
+                <appender-ref ref="LOGSTASH"/>
+            </then>
+        </if>
+    </root>
+
+    <logger name="me.qiujun.arbitrage" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <if condition='isDefined("logstashEnable") &amp;&amp; property("logstashEnable").equals("true")'>
+            <then>
+                <appender-ref ref="LOGSTASH"/>
+            </then>
+        </if>
+    </logger>
+</configuration>

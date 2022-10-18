@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="me.qiujun.arbitrage.mapper.OrderMapper">
+    <resultMap id="BaseResultMap" type="me.qiujun.arbitrage.bean.base.Order">
+        <!--@Table arbitrage_order-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="config_id" jdbcType="BIGINT" property="configId"/>
+        <result column="trade_type" jdbcType="VARCHAR" property="tradeType"/>
+        <result column="exchange" jdbcType="VARCHAR" property="exchange"
+                typeHandler="me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler"/>
+        <result column="exchange_market" jdbcType="VARCHAR" property="exchangeMarket"/>
+        <result column="exchange_order_id" jdbcType="VARCHAR" property="exchangeOrderId"/>
+        <result column="symbol" jdbcType="VARCHAR" property="symbol"/>
+        <result column="side" jdbcType="VARCHAR" property="side"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="price" jdbcType="DECIMAL" property="price"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="base_currency" jdbcType="VARCHAR" property="baseCurrency"/>
+        <result column="base_amount" jdbcType="DECIMAL" property="baseAmount"/>
+        <result column="base_amount_filled" jdbcType="DECIMAL" property="baseAmountFilled"/>
+        <result column="quote_currency" jdbcType="VARCHAR" property="quoteCurrency"/>
+        <result column="quote_amount" jdbcType="DECIMAL" property="quoteAmount"/>
+        <result column="quote_amount_filled" jdbcType="DECIMAL" property="quoteAmountFilled"/>
+        <result column="fee_currency" jdbcType="VARCHAR" property="feeCurrency"/>
+        <result column="fee_amount" jdbcType="DECIMAL" property="feeAmount"/>
+        <result column="spread" jdbcType="DECIMAL" property="spread"/>
+        <result column="exchange_rate" jdbcType="DECIMAL" property="exchangeRate"/>
+        <result column="hedge_order_id" jdbcType="BIGINT" property="hedgeOrderId"/>
+        <result column="stat_income" jdbcType="DECIMAL" property="statIncome"/>
+        <result column="stat_cost" jdbcType="DECIMAL" property="statCost"/>
+        <result column="finished_at" jdbcType="TIMESTAMP" property="finishedAt"/>
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, config_id, trade_type, exchange, exchange_market, exchange_order_id, symbol, side, `type`, price, `status`,
+        base_currency, base_amount, base_amount_filled, quote_currency, quote_amount, quote_amount_filled,
+        fee_currency, fee_amount, spread, exchange_rate, hedge_order_id, stat_income, stat_cost,
+        finished_at, created_at, updated_at
+    </sql>
+
+    <select id="recover" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select a.* from arbitrage_order a
+        left join arbitrage_order b on b.id = a.hedge_order_id
+        left join arbitrage_config c on c.id = a.config_id
+        where c.server_id = #{serverId,jdbcType=BIGINT}
+        and (
+        a.finished_at is null
+        or (a.trade_type = 'TRADE' and a.base_amount_filled &gt; 0 and a.hedge_order_id is null)
+        or (a.stat_income is null or a.stat_cost is null)
+        or (a.hedge_order_id is not null and (b.stat_income is null or b.stat_cost is null))
+        )
+        union
+        select b.* from arbitrage_order a
+        left join arbitrage_order b on b.id = a.hedge_order_id
+        left join arbitrage_config c on c.id = a.config_id
+        where c.server_id = #{serverId,jdbcType=BIGINT}
+        and (a.hedge_order_id is not null and (b.stat_income is null or b.stat_cost is null))
+    </select>
+
+    <insert id="persist" parameterType="me.qiujun.arbitrage.bean.base.Order">
+        insert into arbitrage_order (
+        id, config_id, trade_type, exchange, exchange_market, exchange_order_id,
+        symbol, side, `type`, price, `status`, base_currency, base_amount,
+        base_amount_filled, quote_currency, quote_amount, quote_amount_filled,
+        fee_currency, fee_amount, spread, exchange_rate, stat_income, stat_cost,
+        hedge_order_id, finished_at, created_at, updated_at
+        ) values
+        <foreach collection="list" item="order" index="index" separator=",">
+            (#{order.id,jdbcType=BIGINT}, #{order.configId,jdbcType=BIGINT}, #{order.tradeType,jdbcType=VARCHAR},
+            #{order.exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler},
+            #{order.exchangeMarket,jdbcType=VARCHAR}, #{order.exchangeOrderId,jdbcType=VARCHAR},
+            #{order.symbol,jdbcType=VARCHAR}, #{order.side,jdbcType=VARCHAR}, #{order.type,jdbcType=VARCHAR},
+            #{order.price,jdbcType=DECIMAL}, #{order.status,jdbcType=VARCHAR},
+            #{order.baseCurrency,jdbcType=VARCHAR}, #{order.baseAmount,jdbcType=DECIMAL},
+            #{order.baseAmountFilled,jdbcType=DECIMAL},
+            #{order.quoteCurrency,jdbcType=VARCHAR}, #{order.quoteAmount,jdbcType=DECIMAL},
+            #{order.quoteAmountFilled,jdbcType=DECIMAL},
+            #{order.feeCurrency,jdbcType=VARCHAR}, #{order.feeAmount,jdbcType=DECIMAL},
+            #{order.spread,jdbcType=DECIMAL}, #{order.exchangeRate,jdbcType=DECIMAL},
+            #{order.statIncome,jdbcType=DECIMAL}, #{order.statCost,jdbcType=DECIMAL},
+            #{order.hedgeOrderId,jdbcType=BIGINT}, #{order.finishedAt,jdbcType=TIMESTAMP},
+            #{order.createdAt,jdbcType=TIMESTAMP}, #{order.updatedAt,jdbcType=TIMESTAMP}
+            )
+        </foreach>
+        on duplicate key update
+        config_id = values(config_id),
+        trade_type = values(trade_type),
+        exchange = values(exchange),
+        exchange_market = values(exchange_market),
+        exchange_order_id = values(exchange_order_id),
+        symbol = values(symbol),
+        side = values(side),
+        `type` = values(`type`),
+        price = values(price),
+        `status` = values(`status`),
+        base_currency = values(base_currency),
+        base_amount = values(base_amount),
+        base_amount_filled = values(base_amount_filled),
+        quote_currency = values(quote_currency),
+        quote_amount = values(quote_amount),
+        quote_amount_filled = values(quote_amount_filled),
+        fee_currency = values(fee_currency),
+        fee_amount = values(fee_amount),
+        spread = values(spread),
+        exchange_rate = values(exchange_rate),
+        stat_income = values(stat_income),
+        stat_cost = values(stat_cost),
+        hedge_order_id = values(hedge_order_id),
+        finished_at = values(finished_at),
+        created_at = values(created_at),
+        updated_at = values(updated_at)
+    </insert>
+
+    <select id="selectAssetChange" resultType="map">
+        select currency, sum(amount_change) amount_change from (
+            select
+                base_currency currency,
+                if(side = 'BUY', base_amount_filled, 0 - base_amount_filled) amount_change
+            from arbitrage_order
+            where exchange = #{exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler}
+            and exchange_market = #{exchangeMarket,jdbcType=VARCHAR}
+            and finished_at between date_sub(#{snapshotAt,jdbcType=TIMESTAMP}, interval 10 minute) and
+            #{snapshotAt,jdbcType=TIMESTAMP}
+            union all
+            select
+                quote_currency currency,
+                if(side = 'BUY', 0 - quote_amount_filled, quote_amount_filled) amount_change
+            from arbitrage_order
+            where exchange = #{exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler}
+            and exchange_market = #{exchangeMarket,jdbcType=VARCHAR}
+            and finished_at between date_sub(#{snapshotAt,jdbcType=TIMESTAMP}, interval 10 minute) and #{snapshotAt,jdbcType=TIMESTAMP}
+        ) t
+        group by 1
+    </select>
+
+    <insert id="copyToCanceled">
+        insert into arbitrage_order_canceled
+        select * from arbitrage_order
+        where status = 'CANCELED' and stat_cost is not null and stat_income is not null
+    </insert>
+
+    <delete id="deleteWhichCopiedToCanceled">
+        delete a from arbitrage_order a
+        left join arbitrage_order_canceled b on a.id = b.id
+        where b.id is not null
+    </delete>
+
+</mapper>

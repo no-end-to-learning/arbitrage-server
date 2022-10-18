@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="me.qiujun.arbitrage.mapper.AssetMapper">
+    <resultMap id="BaseResultMap" type="me.qiujun.arbitrage.bean.base.Asset">
+        <!--@Table arbitrage_asset-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="exchange" jdbcType="VARCHAR" property="exchange"
+                typeHandler="me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler"/>
+        <result column="exchange_market" jdbcType="VARCHAR" property="exchangeMarket"/>
+        <result column="exchange_account" jdbcType="VARCHAR" property="exchangeAccount"/>
+        <result column="currency" jdbcType="VARCHAR" property="currency"/>
+        <result column="available" jdbcType="DECIMAL" property="available"/>
+        <result column="freeze" jdbcType="DECIMAL" property="freeze"/>
+        <result column="total" jdbcType="DECIMAL" property="total"/>
+        <result column="stat_total" jdbcType="DECIMAL" property="statTotal"/>
+        <result column="snapshot" jdbcType="BIT" property="snapshot"/>
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, exchange, exchange_market, exchange_account,
+        currency, available, `freeze`, total, stat_total,
+        snapshot, created_at, updated_at
+    </sql>
+
+    <insert id="upsert" parameterType="me.qiujun.arbitrage.bean.base.Asset">
+        insert into arbitrage_asset (
+        id, exchange, exchange_market, exchange_account,
+        currency, available, `freeze`, total, stat_total, snapshot
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id,jdbcType=BIGINT},
+            #{item.exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler},
+            #{item.exchangeMarket,jdbcType=VARCHAR},
+            #{item.exchangeAccount,jdbcType=VARCHAR},
+            #{item.currency,jdbcType=VARCHAR},
+            #{item.available,jdbcType=DECIMAL},
+            #{item.freeze,jdbcType=DECIMAL},
+            #{item.total,jdbcType=DECIMAL},
+            #{item.statTotal,jdbcType=DECIMAL},
+            #{item.snapshot,jdbcType=BIT}
+            )
+        </foreach>
+        on duplicate key update
+        available = values(available),
+        freeze = values(freeze),
+        total = values(total),
+        stat_total = values(stat_total),
+        snapshot = if(snapshot = 1, snapshot, values(snapshot))
+    </insert>
+
+    <select id="selectNeedSnapshot" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from arbitrage_asset
+        where snapshot = 1
+    </select>
+
+    <select id="selectByExchangeAndMarket" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from arbitrage_asset
+        where exchange = #{exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler}
+        and exchange_market = #{exchangeMarket,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByExchangeAndMarketAndCurrency" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from arbitrage_asset
+        where exchange = #{exchange,jdbcType=VARCHAR,typeHandler=me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler}
+        and exchange_market = #{exchangeMarket,jdbcType=VARCHAR}
+        and currency = #{currency,jdbcType=VARCHAR}
+    </select>
+</mapper>

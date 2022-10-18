@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="me.qiujun.arbitrage.mapper.ConfigMapper">
+    <resultMap id="BaseResultMap" type="me.qiujun.arbitrage.bean.base.Config">
+        <!--@Table arbitrage_config-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="server_id" jdbcType="BIGINT" property="serverId"/>
+        <result column="trade_exchange" jdbcType="VARCHAR" property="tradeExchange"
+                typeHandler="me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler"/>
+        <result column="trade_exchange_market" jdbcType="VARCHAR" property="tradeExchangeMarket"/>
+        <result column="trade_symbol" jdbcType="VARCHAR" property="tradeSymbol"/>
+        <result column="trade_interval" jdbcType="VARCHAR" property="tradeInterval"/>
+        <result column="trade_interval_threshold" jdbcType="VARCHAR" property="tradeIntervalThreshold"/>
+        <result column="hedge_exchange" jdbcType="VARCHAR" property="hedgeExchange"
+                typeHandler="me.qiujun.arbitrage.mapper.handler.ExchangeNameTypeHandler"/>
+        <result column="hedge_exchange_market" jdbcType="VARCHAR" property="hedgeExchangeMarket"/>
+        <result column="hedge_symbol" jdbcType="VARCHAR" property="hedgeSymbol"/>
+        <result column="hedge_scale" jdbcType="DECIMAL" property="hedgeScale"/>
+        <result column="min_amount" jdbcType="DECIMAL" property="minAmount"/>
+        <result column="max_amount" jdbcType="DECIMAL" property="maxAmount"/>
+        <result column="min_base_spread" jdbcType="DECIMAL" property="minBaseSpread"/>
+        <result column="max_base_spread" jdbcType="DECIMAL" property="maxBaseSpread"/>
+        <result column="float_spread_scale" jdbcType="DECIMAL" property="floatSpreadScale"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, server_id, trade_exchange, trade_exchange_market, trade_symbol,
+        trade_interval, trade_interval_threshold,
+        hedge_exchange, hedge_exchange_market, hedge_symbol, hedge_scale,
+        min_amount, max_amount, min_base_spread, max_base_spread, float_spread_scale,
+        status, created_at, updated_at
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from arbitrage_config
+        where id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from arbitrage_config
+    </select>
+
+</mapper>
